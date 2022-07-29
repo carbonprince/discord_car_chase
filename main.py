@@ -68,9 +68,9 @@ def connect_to_endpoint(url, params):
             )
     return response.json()
 
-def filter_json(tweet, past_id):
+def filter_json(tweet, latest_tweet_id):
     if "WATCH LIVE" in tweet['text']:
-        if int(tweet['id']) > past_id:
+        if int(tweet['id']) > latest_tweet_id:
             return tweet['entities']['urls'][0]['expanded_url'] 
 
 def set_latest_tweet_id(json_response):
@@ -96,7 +96,7 @@ def main():
         if int(json_response['meta']['newest_id']) > latest_tweet_id:
             tweet_urls = []
             for tweet in json_response['data']:
-                tweet_urls.append(filter_json(tweet))
+                tweet_urls.append(filter_json(tweet, latest_tweet_id))
             for url in tweet_urls:
                 webhook = Webhook.from_url(webhook_url, adapter=RequestsWebhookAdapter()) # Initializing webhook
                 webhook.send(content=f"🚨CHASE ALERT🚨\n{url}")
