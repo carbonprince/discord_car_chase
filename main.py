@@ -80,7 +80,7 @@ def get_latest_tweet_id():
     try:
         with open("past_ids.txt", mode="r") as file:
             latest_tweet_id = file.read()
-            return latest_tweet_id
+            return int(latest_tweet_id)
     except FileNotFoundError:
         return 0
 
@@ -90,15 +90,17 @@ def main():
     params = get_params() # get the parameters to send to the API via a request 
     json_response = connect_to_endpoint(url, params) # make a request to the api endpoint at the <url> using the <params>
     latest_tweet_id = get_latest_tweet_id()
-    if json_response['meta']['newest_id'] > latest_tweet_id:
+    if int(json_response['meta']['newest_id']) > latest_tweet_id:
         tweet_urls = []
         for tweet in json_response['data']:
             tweet_urls.append(filter_json(tweet))
         for url in tweet_urls:
             webhook = Webhook.from_url(webhook_url, adapter=RequestsWebhookAdapter()) # Initializing webhook
-            embed = discord.Embed(title="CHASE", description=":2time:") # Initializing an Embed
-            embed.add_field(name="Link", value= url) # Adding a new field
-            webhook.send(embed=embed) # Executing webhook and sending embed.
+            webhook.send(content=f"🚨CHASE ALERT🚨\n{url}")
+            ## NOTE: below is commented out for now until we can get rich preview on            
+            # embed = discord.Embed(title="CHASE", description="🚨") # Initializing an Embed
+            # embed.add_field(name="Link", value= url) # Adding a new field
+            # webhook.send(embed=embed) # Executing webhook and sending embed.
         set_latest_tweet_id(json_response)
 
 if __name__ == "__main__":
