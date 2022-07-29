@@ -105,7 +105,7 @@ def main():
                 # embed.add_field(name="Link", value= url) # Adding a new field
                 # webhook.send(embed=embed) # Executing webhook and sending embed.
             set_latest_tweet_id(json_response)
-        time.sleep(60)
+        time.sleep(config['rest_time'])
 
 if __name__ == "__main__":
     main()

@@ -1,5 +1,6 @@
 {
     "bearer_token": "bearer_token_goes_here",
     "twitter_account": 37162208,
-    "webhook_url": "webhook_goes_here"
+    "webhook_url": "webhook_goes_here",
+    "rest_time": 60
 }
