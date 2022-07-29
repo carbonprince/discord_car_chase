@@ -2,6 +2,7 @@ import requests
 import json
 from discord import Webhook, RequestsWebhookAdapter, Embed
 import traceback
+import time
 
 # NOTE: To activate your python environment use the command
 # .\my_env\Scripts\activate
@@ -67,9 +68,10 @@ def connect_to_endpoint(url, params):
             )
     return response.json()
 
-def filter_json(tweet):
+def filter_json(tweet, past_id):
     if "WATCH LIVE" in tweet['text']:
-        return tweet['entities']['urls'][0]['expanded_url'] 
+        if int(tweet['id']) > past_id:
+            return tweet['entities']['urls'][0]['expanded_url'] 
 
 def set_latest_tweet_id(json_response):
     newest_id = json_response['meta']['newest_id']
@@ -88,20 +90,22 @@ def main():
     webhook_url = config['webhook_url']
     url = create_url(config['twitter_account']) # get a url to the twitter api with the account_id inserted into it
     params = get_params() # get the parameters to send to the API via a request 
-    json_response = connect_to_endpoint(url, params) # make a request to the api endpoint at the <url> using the <params>
-    latest_tweet_id = get_latest_tweet_id()
-    if int(json_response['meta']['newest_id']) > latest_tweet_id:
-        tweet_urls = []
-        for tweet in json_response['data']:
-            tweet_urls.append(filter_json(tweet))
-        for url in tweet_urls:
-            webhook = Webhook.from_url(webhook_url, adapter=RequestsWebhookAdapter()) # Initializing webhook
-            webhook.send(content=f"🚨CHASE ALERT🚨\n{url}")
-            ## NOTE: below is commented out for now until we can get rich preview on            
-            # embed = discord.Embed(title="CHASE", description="🚨") # Initializing an Embed
-            # embed.add_field(name="Link", value= url) # Adding a new field
-            # webhook.send(embed=embed) # Executing webhook and sending embed.
-        set_latest_tweet_id(json_response)
+    while True:
+        json_response = connect_to_endpoint(url, params) # make a request to the api endpoint at the <url> using the <params>   
+        latest_tweet_id = get_latest_tweet_id()
+        if int(json_response['meta']['newest_id']) > latest_tweet_id:
+            tweet_urls = []
+            for tweet in json_response['data']:
+                tweet_urls.append(filter_json(tweet))
+            for url in tweet_urls:
+                webhook = Webhook.from_url(webhook_url, adapter=RequestsWebhookAdapter()) # Initializing webhook
+                webhook.send(content=f"🚨CHASE ALERT🚨\n{url}")
+                ## NOTE: below is commented out for now until we can get rich preview on            
+                # embed = discord.Embed(title="CHASE", description="🚨") # Initializing an Embed
+                # embed.add_field(name="Link", value= url) # Adding a new field
+                # webhook.send(embed=embed) # Executing webhook and sending embed.
+            set_latest_tweet_id(json_response)
+        time.sleep(60)
 
 if __name__ == "__main__":
     main()
