@@ -71,7 +71,10 @@ def connect_to_endpoint(url, params):
 def filter_json(tweet, latest_tweet_id):
     if "WATCH LIVE" in tweet['text']:
         if int(tweet['id']) > latest_tweet_id:
-            return tweet['entities']['urls'][0]['expanded_url'] 
+            url = tweet['entities']['urls'][0]['expanded_url'] 
+            return url
+    else:
+        pass
 
 def set_latest_tweet_id(json_response):
     newest_id = json_response['meta']['newest_id']
@@ -87,16 +90,18 @@ def get_latest_tweet_id():
         return 0
 
 def main():
-    webhook_url = config['webhook_url']
-    url = create_url(config['twitter_account']) # get a url to the twitter api with the account_id inserted into it
-    params = get_params() # get the parameters to send to the API via a request 
     while True:
+        webhook_url = config['webhook_url']
+        url = create_url(config['twitter_account']) # get a url to the twitter api with the account_id inserted into it
+        params = get_params() # get the parameters to send to the API via a request 
         json_response = connect_to_endpoint(url, params) # make a request to the api endpoint at the <url> using the <params>   
         latest_tweet_id = get_latest_tweet_id()
         if int(json_response['meta']['newest_id']) > latest_tweet_id:
             tweet_urls = []
             for tweet in json_response['data']:
-                tweet_urls.append(filter_json(tweet, latest_tweet_id))
+                url = filter_json(tweet, latest_tweet_id)
+                if url:
+                    tweet_urls.append(url)
             for url in tweet_urls:
                 webhook = Webhook.from_url(webhook_url, adapter=RequestsWebhookAdapter()) # Initializing webhook
                 webhook.send(content=f"🚨CHASE ALERT🚨\n{url}")
@@ -105,10 +110,8 @@ def main():
                 # embed.add_field(name="Link", value= url) # Adding a new field
                 # webhook.send(embed=embed) # Executing webhook and sending embed.
             set_latest_tweet_id(json_response)
+            print(f"New tweets found, url data: {tweet_urls}")
         time.sleep(config['rest_time'])
 
 if __name__ == "__main__":
     main()
-
-# Example outputs of tweets 
-# Each tweet is separated by three newlines 
